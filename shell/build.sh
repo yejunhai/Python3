@@ -10,35 +10,35 @@ jarpath=/root/local/apps/weather-api
 inventory=/inventory/$hosts.yaml
 
 update(){
-	 ansible $hosts[$1] -i $inventory -m shell -a "cd /data/py;python3 aliyun_slb.py stop"
-     ansible $hosts[$1] -i $inventory -m copy -a "src=$build_dir/build/libs/ dest=$jarpath/"
-     ansible $hosts[$1] -i $inventory -m shell -a "cd $jarpath;sh server.sh stop"
-     ansible $hosts[$1] -i $inventory -m shell -a "cd $jarpath;sh server.sh start"
+	ansible $hosts[$1] -i $inventory -m shell -a "cd /data/py;python3 aliyun_slb.py stop"
+	ansible $hosts[$1] -i $inventory -m copy -a "src=$build_dir/build/libs/ dest=$jarpath/"
+	ansible $hosts[$1] -i $inventory -m shell -a "cd $jarpath;sh server.sh stop"
+	ansible $hosts[$1] -i $inventory -m shell -a "cd $jarpath;sh server.sh start"
 }
 
 case $deployment_selection in
 
 deploy)
-     echo "begin $deployment_selection "
-     cd  $build_dir
-     gradle clean build -x test -Penv=pro
-     update 0
-     exit 0
-     ;;
+	echo "begin $deployment_selection "
+	cd  $build_dir
+	gradle clean build -x test -Penv=pro
+	update 0
+	exit 0
+	;;
 
 rollback)
-     echo "begin $deployment_selection  version=$version"
-     if [ $version -eq 0 ];then
+	echo "begin $deployment_selection  version=$version"
+	if [ $version -eq 0 ];then
 		echo "Version not specified"
 		exit 1
-	 fi
-     rm -rf $build_dir/build/libs
-     cp -rp /var/jenkins_home/workspace/weather/code/weather/weather-api $build_dir/build/
-     cd $build_dir/build/libs && ls || exit 1
-     update 0
-     ansible $hosts[0] -i $inventory -m shell -a "cd /data/py;python3 aliyun_slb.py start"
-     exit 0
-     ;;
+	fi
+	rm -rf $build_dir/build/libs
+	cp -rp /var/jenkins_home/workspace/weather/code/weather/weather-api $build_dir/build/
+	cd $build_dir/build/libs && ls || exit 1
+	update 0
+	ansible $hosts[0] -i $inventory -m shell -a "cd /data/py;python3 aliyun_slb.py start"
+	exit 0
+	;;
 
 all_deploy)
 	echo "begin $deployment_selection  version=$version"
@@ -53,7 +53,7 @@ all_deploy)
 	for ((i=0;i<$host_number;i++))
 	do
 		update $i
-	    ansible $hosts[$i] -i $inventory -m shell -a "cd /data/py;python3 aliyun_slb.py start"
+	   ansible $hosts[$i] -i $inventory -m shell -a "cd /data/py;python3 aliyun_slb.py start"
 	done
 	exit 0
 	;;
