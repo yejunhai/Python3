@@ -3,14 +3,22 @@
 set -e -u
 
 export LANG=en_US.UTF-8
+#指定Gradle版本
 export PATH=$PATH:/var/jenkins_home/tools/hudson.plugins.gradle.GradleInstallation/Gracle_5.6.1/bin/
+#进入项目构建指定目录
 build_dir=/var/jenkins_home/workspace/sdk-api/api
+#构建后的备份目录，第一次构建后会生成
 back_dir=/var/jenkins_home/jobs/sdk-api/builds/$version/archive/api/build/libs
+#构建命令
 build_command='gradle shadowJarAliYunRelease'
+#定义更新的主机组 ansible需要调用
 hosts=sdk-api
+#远端服务器jar包存放位置
 jarpath=/root/local/apps/sdk-api
+#指定主机清单
 inventory=/inventory/$hosts.yaml
 
+#登入目标主机更新应用
 update(){
 	ansible $hosts[$1] -i $inventory -m shell -a "cd /data/py;python3 aliyun_slb_vs.py stop"
 	ansible $hosts[$1] -i $inventory -m script -a "/sh/user_check.sh"

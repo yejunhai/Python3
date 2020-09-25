@@ -2,23 +2,21 @@
 
 set -e -u
 
-export LANG=en_US.UTF-8
-export PATH=$PATH:/var/jenkins_home/tools/hudson.plugins.gradle.GradleInstallation/Gracle_5.6.1/bin/
-build_dir=/var/jenkins_home/workspace/sdk-api/api
-back_dir=/var/jenkins_home/jobs/sdk-api/builds/$version/archive/api/build/libs
-build_command='gradle shadowJarAliYunRelease'
-hosts=sdk-api
-jarpath=/root/local/apps/sdk-api
+export PATH=$PATH:/var/jenkins_home/tools/hudson.plugins.gradle.GradleInstallation/Gradle_4.8/bin/
+build_dir=/var/jenkins_home/workspace/weather/code/weather/weather-task
+back_dir=/var/jenkins_home/jobs/weather/builds/$version/archive/code/weather/weather-task/build/libs
+build_command='gradle clean build -x test -Penv=pro'
+hosts=weather-task
+#jarfile=weather-task.jar
+jarpath=/root/local/apps/weather-task
 inventory=/inventory/$hosts.yaml
 
 update(){
-	ansible $hosts[$1] -i $inventory -m shell -a "cd /data/py;python3 aliyun_slb_vs.py stop"
-	ansible $hosts[$1] -i $inventory -m script -a "/sh/user_check.sh"
 	ansible $hosts[$1] -i $inventory -m copy -a "src=$build_dir/build/libs/ dest=$jarpath/"
 	ansible $hosts[$1] -i $inventory -m shell -a "cd $jarpath;sh server.sh stop"
 	ansible $hosts[$1] -i $inventory -m shell -a "cd $jarpath;sh server.sh start"
 	ansible $hosts[$1] -i $inventory -m script -a "/sh/http_status.sh"
-	sleep 5
+    sleep 60
 }
 
 move(){
@@ -29,15 +27,6 @@ move(){
 	rm -rf $build_dir/build/libs
 	cp -rp $back_dir $build_dir/build/
 	cd $build_dir/build/libs && ls || exit 1
-}
-
-all_update(){
-	host_number=$(grep -v "^\[" $inventory |wc -l)
-	for ((i=0;i<$host_number;i++))
-	do
-		update $i
-		ansible $hosts[$i] -i $inventory -m shell -a "cd /data/py;python3 aliyun_slb_vs.py start"
-	done
 }
 
 case $deployment in
@@ -61,22 +50,18 @@ rollback)
 	echo "begin $deployment  version=$version"
 	move
 	update 0
-	ansible $hosts[0] -i $inventory -m shell -a "cd /data/py;python3 aliyun_slb_vs.py start"
 	exit 0
 	;;
 
 all_deploy)
-	echo "begin $deployment"
+	echo "begin $deployment  version=$version"
 	cd  $build_dir
 	$build_command
-	all_update
-	exit 0
-	;;
-
-all_rollback)
-	echo "begin $deployment  version=$version"
-	move
-	all_update
+	host_number=$(grep -v "^\[" $inventory |wc -l)
+	for ((i=0;i<$host_number;i++))
+	do
+		update $i
+	done
 	exit 0
 	;;
 
